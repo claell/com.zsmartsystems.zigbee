@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -28,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.zsmartsystems.zigbee.app.ZigBeeNetworkExtension;
 import com.zsmartsystems.zigbee.internal.ClusterMatcher;
 import com.zsmartsystems.zigbee.internal.NotificationService;
 import com.zsmartsystems.zigbee.internal.ZigBeeNetworkDiscoverer;
@@ -182,6 +184,12 @@ public class ZigBeeNetworkManager implements ZigBeeNetwork, ZigBeeTransportRecei
      * The deserializer class used to deserialize commands from data packets
      */
     private Class<ZigBeeDeserializer> deserializerClass;
+
+    /**
+     * Map of {@link ZigBeeNetworkExtension}s that are available to this network. Extensions are added
+     * with the {@link #addApplication(ZigBeeNetworkExtension extension)} method.
+     */
+    private final List<ZigBeeNetworkExtension> extensions = new CopyOnWriteArrayList<ZigBeeNetworkExtension>();
 
     /**
      * A ClusterMatcher used to respond to the {@link MatchDescriptorRequest} command.
@@ -1302,6 +1310,16 @@ public class ZigBeeNetworkManager implements ZigBeeNetwork, ZigBeeTransportRecei
         }
 
         clusterMatcher.addCluster(cluster);
+    }
+
+    /**
+     * Adds a functional extension to the network.
+     *
+     * @param extension the new {@link ZigBeeNetworkExtension}
+     */
+    public void addExtension(ZigBeeNetworkExtension extension) {
+        extensions.add(extension);
+        extension.extensionStartup(this);
     }
 
     /**
